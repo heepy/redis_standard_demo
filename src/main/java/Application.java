@@ -17,8 +17,6 @@ public static void main(String[] args){
 
     JedisPool jedisPool=new JedisPool(config,"139.129.90.200",6379,2000,"zhr_redis");
 
-
-
     UserInfoDao userInfoDao=new UserInfoDao();
     DoubleWrite doubleWrite=new DoubleWrite(jedisPool,userInfoDao);
     for (int i=0;i<5000;i++){

@@ -46,24 +46,22 @@ public class DistributedLock {
             long start=System.currentTimeMillis();
 
             while (true) {
-               String result= conn.set(lock_key,identifier,"NX","EX",acquireTimeout); //保证原子性，不能使用setNx
+
+                Thread.sleep(100);//等待100毫秒，防止一直竞争资源
+
+                String result= conn.set(lock_key,identifier,"NX","EX",acquireTimeout); //保证原子性，不能使用setNx
                 if("OK".equals(result)){
                     return  true;
                 }
                 //否则循环等待，在timeout时间内仍未获取到锁，则获取失败
                 long l = System.currentTimeMillis()-start;
                 if (l>=timeout) {
-                    System.out.println("线程"+identifier+"---------超时："+l);
                     return false;
                 }
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+
             }
 
-        } catch (JedisException e) {
+        } catch (JedisException | InterruptedException e) {
             e.printStackTrace();
         } finally {
             if (conn != null) {
@@ -99,6 +97,9 @@ public class DistributedLock {
 
         } catch (JedisException e) {
             e.printStackTrace();
+            if(conn!=null){
+                jedisPool.returnResourceObject(conn);
+            }
         } finally {
             if (conn != null) {
                 conn.close();

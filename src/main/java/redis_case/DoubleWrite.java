@@ -82,4 +82,45 @@ public class DoubleWrite {
         }
         return null;
     }
+
+    /**
+     * 此方法可以解决缓存穿透问题，若数据库中没有数据，为防止缓存穿透造成数据库压力，可以返回一个空值
+     * @author horan
+     * @param key
+     */
+    public String getDataIsEmpty(String key){
+        Jedis conn = null;
+        String value=null;
+        try {
+            // 获取连接
+            conn = jedisPool.getResource();
+            // 获取Key
+
+            value=conn.get(key);
+            //如果命中
+            if(value!=null){
+                return value;
+            }else{ //否则更新缓存
+                int id=Integer.parseInt(key);
+                UserInfo userInfo=userInfoDao.getUserInfo(id);
+                String newValue=null;
+                if(userInfo!=null){
+                    newValue=userInfo.getUserName();
+                    conn.setex(key,120,newValue);
+                }
+                newValue="没有数据";
+                conn.setex(key,120,newValue);       //设置过期时间为120秒
+                return newValue;
+            }
+        } catch (JedisException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (conn != null) {
+                conn.close();
+            }
+        }
+        return null;
+    }
 }
