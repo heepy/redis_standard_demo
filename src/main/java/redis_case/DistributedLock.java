@@ -40,15 +40,10 @@ public class DistributedLock {
         try {
             // 获取连接
             conn = jedisPool.getResource();
-
-
             // 获取锁的超时时间，超过这个时间则放弃获取锁
             long start=System.currentTimeMillis();
-
             while (true) {
-
                 Thread.sleep(100);//等待100毫秒，防止一直竞争资源
-
                 String result= conn.set(lock_key,identifier,"NX","EX",acquireTimeout); //保证原子性，不能使用setNx
                 if("OK".equals(result)){
                     return  true;
@@ -70,7 +65,27 @@ public class DistributedLock {
         }
         return true;
     }
+    public boolean lock(String identifier, long acquireTimeout) {
+        Jedis conn = null;
+        try {
+            // 获取连接
+            conn = jedisPool.getResource();
+            String result= conn.set(lock_key,identifier,"NX","EX",acquireTimeout); //保证原子性，不能使用setNx
+            if("OK".equals(result)){
+                    return  true;
+            }
 
+            return false;
+
+        } catch (JedisException e) {
+            e.printStackTrace();
+        } finally {
+            if (conn != null) {
+                conn.close();
+            }
+        }
+        return true;
+    }
     /**
      * 释放锁
      * @param identifier 释放锁的标识
